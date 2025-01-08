@@ -1,7 +1,8 @@
-﻿namespace TP.ConcurrentProgramming.Fundamentals
+﻿namespace MonitorImplementation.HoareMonitor
 {
   public abstract class HoareMonitor
   {
+    private readonly object _lockRef = new object();
     protected interface ISignal
     {
       /// <summary>
@@ -72,5 +73,96 @@
     /// </summary>
     /// <returns></returns>
     protected abstract ICondition GetCondition();
-  }
-}
+
+    protected class Signal : ISignal
+    {
+        private readonly object _monitor;
+        private int wCount;
+
+        public Signal(object monitorLock)
+        {
+            _monitor = monitorLock;
+            wCount = 0;
+        }
+
+        public void Send()
+        {
+            lock (_monitor)
+            {
+                if (wCount > 0)
+                {
+                    Monitor.Pulse(_monitor);
+                }
+            }
+        }
+
+        public void Wait()
+        {
+            wCount++;
+            lock (_monitor)
+            {
+               Monitor.Wait(_monitor);
+            }
+            wCount--;
+        }
+
+        public bool Await()
+        {
+            lock (_monitor)
+            {
+                return wCount > 0;
+            }
+        }
+    }
+
+    protected class Condition : ICondition
+    {
+        private readonly object _monitor;
+        private int wCount = 0;
+
+        public Condition(object monitor)
+        {
+            _monitor = monitor;
+        }
+
+        public void Send()
+        {
+            lock (_monitor)
+            {
+                if (wCount > 0)
+                {
+                    Monitor.Pulse(_monitor);
+                }
+            }
+        }
+
+        public void Wait()
+        {
+            wCount++;
+            lock (_monitor)
+            {
+                Monitor.Wait(_monitor);
+            }
+            wCount--;
+        }
+
+        public bool Await()
+        {
+            lock (_monitor)
+            {
+                return wCount > 0;
+            }
+        }
+        }
+    }
+
+        //protected override ISignal CreateSignal()
+        //    {
+        //        return new Signal(_lockRef);
+        //    }
+
+        //protected override ICondition GetCondition()
+        //    {
+        //        return new Condition(_lockRef);
+        //    }
+ }

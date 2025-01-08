@@ -5,6 +5,8 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Monitor", "Monitor\Monitor.csproj", "{EC87F1FF-D1F7-4600-AFAB-EDAD11D7F0D7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonitorTest", "MonitorTest\MonitorTest.csproj", "{5C632784-39CB-433E-BA65-E5BFF3CCD374}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{EC87F1FF-D1F7-4600-AFAB-EDAD11D7F0D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EC87F1FF-D1F7-4600-AFAB-EDAD11D7F0D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EC87F1FF-D1F7-4600-AFAB-EDAD11D7F0D7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5C632784-39CB-433E-BA65-E5BFF3CCD374}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5C632784-39CB-433E-BA65-E5BFF3CCD374}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5C632784-39CB-433E-BA65-E5BFF3CCD374}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5C632784-39CB-433E-BA65-E5BFF3CCD374}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
