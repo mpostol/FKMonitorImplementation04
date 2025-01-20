@@ -8,36 +8,27 @@ public class HoareMonitorImplementation : HoareMonitor
 
     }
 
-    private HoareMonitorImplementation hoareMonitorImplementation;
+    private object dedicatedObject = new object();
+
+    private Queue<Thread> threadQueue = new();
 
     private class Signal : ISignal
     {
-        
-        Queue threadQueue = new Queue();
+        private readonly HoareMonitorImplementation hoareMonitor = new();
 
-        private HoareMonitorImplementation hoareMonitor;
-
-        private object dedicatedObject = new object();
-
-        private bool checkQueue()
+        public Signal(HoareMonitorImplementation hoareMonitorImplementation)
         {
-            if(threadQueue.Count > 0) { return true; }
-            else { return false; }
-        }
-
-        public Signal(HoareMonitorImplementation hoareMonitor)
-        {
-            this.hoareMonitor = hoareMonitor;
+            hoareMonitor = hoareMonitorImplementation;
         }
 
         public void Send()
         {
-            lock (dedicatedObject)
+            lock (hoareMonitor.dedicatedObject)
             {
-                if (checkQueue())
+                if (hoareMonitor.threadQueue.Count > 0)
                 {
-                    object ?thread = threadQueue.Dequeue();
-                    Monitor.Pulse(dedicatedObject);
+                    Thread thread = hoareMonitor.threadQueue.Dequeue();
+                    Monitor.Pulse(hoareMonitor.dedicatedObject);
                 }
             }
 
@@ -45,19 +36,19 @@ public class HoareMonitorImplementation : HoareMonitor
 
         public void Wait()
         {
-            lock (dedicatedObject)
+            lock (hoareMonitor.dedicatedObject)
             {
-                threadQueue.Enqueue(Thread.CurrentThread);
-                Monitor.Wait(Thread.CurrentThread);
-                //threadQueue.Dequeue();
+                hoareMonitor.threadQueue.Enqueue(Thread.CurrentThread);
+                Monitor.Wait(hoareMonitor.dedicatedObject);
             }
         }
 
         public bool Await()
         {
-            lock (dedicatedObject)
+            lock (hoareMonitor.dedicatedObject)
             {
-                return checkQueue();
+                if (hoareMonitor.threadQueue.Count > 0) { return true; }
+                else { return false; }
             }
 
         }
@@ -88,7 +79,7 @@ public class HoareMonitorImplementation : HoareMonitor
             {
                 if (checkQueue())
                 {
-                    Monitor.PulseAll(dedicatedObject);
+                    Monitor.Pulse(this);
                 }
             }
 
@@ -98,9 +89,8 @@ public class HoareMonitorImplementation : HoareMonitor
         {
             lock (dedicatedObject)
             {
-                //threadQueue.Enqueue(Thread.CurrentThread);
+                threadQueue.Enqueue(Thread.CurrentThread);
                 Monitor.Wait(Thread.CurrentThread);
-                //threadQueue.Dequeue();
             }
         }
 
@@ -116,11 +106,16 @@ public class HoareMonitorImplementation : HoareMonitor
 
     protected override ISignal CreateSignal()
     {
-        return new Signal(hoareMonitorImplementation);
+        return new Signal(this);
     }
 
     protected override ICondition GetCondition()
     {
-        return new Condition(hoareMonitorImplementation);
+        return new Condition(this);
+    }
+
+    public void addThreadToQueue(Thread thread)
+    {
+        threadQueue.Enqueue(thread);
     }
 }
