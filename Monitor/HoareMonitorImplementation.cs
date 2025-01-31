@@ -42,6 +42,12 @@ namespace MonitorImplementation.HoareMonitor
             return new Condition(this);
         }
 
+        public void ExecutMethod()
+        {
+            Console.WriteLine("Executing a method in Critical Section.");
+            //TO DO: implement AOP
+        }
+
         protected virtual void Dispose(bool disposing)
         {
             if (!disposedValue)
