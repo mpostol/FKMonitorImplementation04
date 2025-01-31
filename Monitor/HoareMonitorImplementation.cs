@@ -1,121 +1,63 @@
 ﻿using MonitorImplementation.HoareMonitor;
 using System.Collections;
+using System.Runtime.CompilerServices;
+using System.Threading;
 
-public class HoareMonitorImplementation : HoareMonitor
+namespace MonitorImplementation.HoareMonitor
 {
-    public HoareMonitorImplementation()
+    public abstract class HoareMonitorImplementation : HoareMonitor, IDisposable
     {
+        protected bool isEntered = false;
+        private Queue<Thread> monitorQueue = new();
+        private bool disposedValue;
 
-    }
-
-    private object dedicatedObject = new object();
-
-    private Queue<Thread> threadQueue = new();
-
-    private class Signal : ISignal
-    {
-        private readonly HoareMonitorImplementation hoareMonitor = new();
-
-        public Signal(HoareMonitorImplementation hoareMonitorImplementation)
+        protected internal void enterMonitorSection()
         {
-            hoareMonitor = hoareMonitorImplementation;
+            Monitor.Enter(this);
+            isEntered = true;
         }
 
-        public void Send()
+        protected internal void exitHoareMonitorSection()
         {
-            lock (hoareMonitor.dedicatedObject)
+            if (isEntered)
             {
-                if (hoareMonitor.threadQueue.Count > 0)
+                isEntered = false;
+                Monitor.Exit(this);
+                Monitor.Pulse(this);
+            }
+        }
+
+        protected internal void addToQueue(Thread thread)
+        {
+            monitorQueue.Enqueue(thread);
+        }
+
+        protected override ISignal CreateSignal()
+        {
+            return new Signal(this);
+        }
+
+        protected override ICondition CreateCondition()
+        {
+            return new Condition(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
                 {
-                    Thread thread = hoareMonitor.threadQueue.Dequeue();
-                    Monitor.Pulse(hoareMonitor.dedicatedObject);
+                    monitorQueue.Clear();
                 }
-            }
-
-        }
-
-        public void Wait()
-        {
-            lock (hoareMonitor.dedicatedObject)
-            {
-                hoareMonitor.threadQueue.Enqueue(Thread.CurrentThread);
-                Monitor.Wait(hoareMonitor.dedicatedObject);
+                disposedValue = true;
             }
         }
 
-        public bool Await()
+        public void Dispose()
         {
-            lock (hoareMonitor.dedicatedObject)
-            {
-                if (hoareMonitor.threadQueue.Count > 0) { return true; }
-                else { return false; }
-            }
-
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
-    }
-
-    private class Condition : ICondition
-    {
-        Queue threadQueue = new Queue();
-
-        private HoareMonitorImplementation hoareMonitor;
-
-        private object dedicatedObject = new object();
-
-        private bool checkQueue()
-        {
-            if (threadQueue.Count > 0) { return true; }
-            else { return false; }
-        }
-
-        public Condition(HoareMonitorImplementation hoareMonitor)
-        {
-            this.hoareMonitor = hoareMonitor;
-        }
-
-        public void Send()
-        {
-            lock (dedicatedObject)
-            {
-                if (checkQueue())
-                {
-                    Monitor.Pulse(this);
-                }
-            }
-
-        }
-
-        public void Wait()
-        {
-            lock (dedicatedObject)
-            {
-                threadQueue.Enqueue(Thread.CurrentThread);
-                Monitor.Wait(Thread.CurrentThread);
-            }
-        }
-
-        public bool Await()
-        {
-            lock (dedicatedObject)
-            {
-                return checkQueue();
-            }
-
-        }
-    }
-
-    protected override ISignal CreateSignal()
-    {
-        return new Signal(this);
-    }
-
-    protected override ICondition GetCondition()
-    {
-        return new Condition(this);
-    }
-
-    public void addThreadToQueue(Thread thread)
-    {
-        threadQueue.Enqueue(thread);
     }
 }
