@@ -7,7 +7,6 @@ namespace MonitorImplementation.HoareMonitor
 {
     public abstract class HoareMonitorImplementation : HoareMonitor, IDisposable
     {
-        protected bool isEntered = false;
         private Queue<Thread> monitorQueue = new();
         private bool disposedValue;
 
@@ -29,11 +28,7 @@ namespace MonitorImplementation.HoareMonitor
             {
                 lock (this)
                 {
-                    if (signalQueue.Count > 0)
-                    {
-                        hoareMonitorImp.addToQueue(signalQueue.Dequeue());
-                        autoResetEvent.Set();
-                    }
+                    autoResetEvent.Set();
                 }
             }
 
@@ -41,12 +36,12 @@ namespace MonitorImplementation.HoareMonitor
             {
                 lock (this)
                 {
-                    signalQueue.Enqueue(Thread.CurrentThread);
-                    hoareMonitorImp.enterMonitorSection();
-                    autoResetEvent.WaitOne();
                     hoareMonitorImp.exitHoareMonitorSection();
+                    autoResetEvent.WaitOne();
+                    hoareMonitorImp.enterMonitorSection();
                 }
             }
+
 
             public bool Await()
             {
@@ -140,18 +135,17 @@ namespace MonitorImplementation.HoareMonitor
         protected internal void enterMonitorSection()
         {
             Monitor.Enter(this);
-            isEntered = true;
         }
 
         protected internal void exitHoareMonitorSection()
         {
-            if (isEntered)
+            lock (this)
             {
-                isEntered = false;
-                Monitor.Exit(this);
                 Monitor.Pulse(this);
+                Monitor.Exit(this);
             }
         }
+
 
         protected internal void addToQueue(Thread thread)
         {

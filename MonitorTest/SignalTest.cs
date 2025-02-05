@@ -13,6 +13,7 @@ namespace MonitorTest
     public class SignalTest
     {
         private SignalTestClass signalTestClass = new();
+        private SignalTestClass signalTestClass2 = new();
 
         [TestMethod]
         public void TestWait()
@@ -43,25 +44,25 @@ namespace MonitorTest
         {
             // Prepare
             bool waited = false;
-            signalTestClass.CreateTheSignal();
+            signalTestClass2.CreateTheSignal();
 
             Thread thread = new Thread(() =>
             {
-                signalTestClass.WaitSignal();
+                signalTestClass2.WaitSignal();
                 waited = true;
             });
 
             // Act
             thread.Start();
             Thread.Sleep(100);
-            signalTestClass.SendTheSignal();
+            signalTestClass2.SendTheSignal();
             thread.Join();
 
             // Test
             Assert.IsTrue(waited);
 
             // Dispose
-            signalTestClass.Dispose();
+            signalTestClass2.Dispose();
         }
 
         private class SignalTestClass : HoareMonitorImplementation, IDisposable
@@ -86,10 +87,7 @@ namespace MonitorTest
                 enterMonitorSection();
                 try
                 {
-                    if (signal != null)
-                    {
-                        signal.Send();
-                    }
+                    signal.Send();
                 }
                 finally
                 {
