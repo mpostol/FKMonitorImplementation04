@@ -12,28 +12,27 @@ namespace MonitorTest
     [TestClass]
     public class SignalTest
     {
-        private SignalTestClass signalTestClass = new();
-        private SignalTestClass signalTestClass2 = new();
-
         [TestMethod]
         public void TestWait()
         {
+            SignalTestClass signalTestClass = new();
             // Prepare
-            bool waited = false;
+            bool isFalse = false;
             signalTestClass.CreateTheSignal();
 
             Thread thread = new Thread(() =>
             {
                 signalTestClass.WaitSignal();
-                waited = true;
+                isFalse = true;
             });
 
             // Act
             thread.Start();
             Thread.Sleep(100);
+            thread.Join();
 
             // Test
-            Assert.IsFalse(waited);
+            Assert.IsFalse(isFalse);
 
             // Dispose
             signalTestClass.Dispose();
@@ -43,13 +42,14 @@ namespace MonitorTest
         public void TestSignal()
         {
             // Prepare
-            bool waited = false;
+            SignalTestClass signalTestClass2 = new();
+            bool isTrue = false;
             signalTestClass2.CreateTheSignal();
 
             Thread thread = new Thread(() =>
             {
                 signalTestClass2.WaitSignal();
-                waited = true;
+                isTrue = true;
             });
 
             // Act
@@ -59,7 +59,7 @@ namespace MonitorTest
             thread.Join();
 
             // Test
-            Assert.IsTrue(waited);
+            Assert.IsTrue(isTrue);
 
             // Dispose
             signalTestClass2.Dispose();
@@ -87,7 +87,7 @@ namespace MonitorTest
                 enterMonitorSection();
                 try
                 {
-                    signal.Send();
+                    signal?.Send();
                 }
                 finally
                 {
@@ -100,10 +100,7 @@ namespace MonitorTest
                 enterMonitorSection();
                 try
                 {
-                    if (signal != null)
-                    {
-                        signal.Wait();
-                    }
+                    signal?.Wait();
                 }
                 finally
                 {

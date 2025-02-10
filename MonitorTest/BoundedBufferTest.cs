@@ -16,67 +16,82 @@ namespace MonitorTest
         public void TestAddItem()
         {
             // Prepare
-            var buffer = new BoundedBuffer();
-            buffer.CreateTheConditions();
+            BoundedBuffer buffer = new BoundedBuffer();
+            int item = 0;
 
             // Act
-            buffer.AddItem(10);
-            int result = buffer.RemoveItem();
+            Thread threadAdd = new Thread(() =>
+            {
+                buffer.AddItem(2);
+                item = buffer.RemoveItem();
+            });
+
+            threadAdd.Start();
+            threadAdd.Join();
 
             // Test
-            Assert.AreEqual(10, result);
+            Assert.AreEqual(2, item);
 
             // Dispose
             buffer.Dispose();
         }
 
         [TestMethod]
-        public void TestRemoveFromEmptyBuffer()
+        public void TestRemoveItem()
         {
             // Prepare
-            var buffer = new BoundedBuffer();
-            buffer.CreateTheConditions();
+            BoundedBuffer buffer = new BoundedBuffer();
+            int item = 0;
 
-            Task.Run(() =>
+            Thread threadRemove = new Thread(() =>
             {
-                Thread.Sleep(100);
-                buffer.AddItem(20);
+                item = buffer.RemoveItem();
+            });
+
+            Thread threadAdd = new Thread(() =>
+            {
+                buffer.AddItem(2);
             });
 
             // Act
-            int result = buffer.RemoveItem();
+            threadRemove.Start();
+            threadAdd.Start();
 
             // Test
-            Assert.AreEqual(20, result);
+            Assert.AreEqual(2, item);
 
             // Dispose
             buffer.Dispose();
         }
 
         [TestMethod]
-        public void TestBufferFullCondition()
+        public void TestBufferIsFull()
         {
             // Prepare
-            var buffer = new BoundedBuffer();
-            buffer.CreateTheConditions();
+            BoundedBuffer buffer = new BoundedBuffer();
+            const int count = 10;
+            const int sleepTime = 100;
+            bool isTrue = true;
 
-            for (int i = 0; i < 5; i++)
+            // Act
+            Thread threadAdd = new Thread(() =>
             {
-                buffer.AddItem(i);
+                for (int i = 0; i < count + 1; i++)
+                {
+                    Thread.Sleep(sleepTime);
+                    buffer.AddItem(count);
+                }
+            });
+
+            threadAdd.Start();
+            threadAdd.Join();
+            if (buffer.RemoveItem() != 9)
+            {
+                isTrue = false;
             }
 
-            Task.Run(() =>
-            {
-                Thread.Sleep(100);
-                buffer.RemoveItem();
-            });
-
-            // Act
-            buffer.AddItem(99);
-            int result = buffer.RemoveItem();
-
             // Test
-            Assert.AreEqual(1, result);
+            Assert.IsTrue(isTrue);
 
             // Dispose
             buffer.Dispose();
@@ -84,35 +99,28 @@ namespace MonitorTest
 
         private class BoundedBuffer : HoareMonitorImplementation, IDisposable
         {
-            private ICondition? nonempty;
-            private ICondition? nonfull;
-
-            internal void CreateTheConditions()
-            {
-                enterMonitorSection();
-                try
-                {
-                    nonempty = CreateCondition();
-                    nonfull = CreateCondition();
-                }
-                finally
-                {
-                    exitHoareMonitorSection();
-                }
-            }
-
-            private int N = 5;
-            private readonly int[] buffer = new int[5];
+            private readonly ISignal? nonempty;
+            private readonly ISignal? nonfull;
+            private const int N = 10;
+            private readonly int[] buffer = new int[N];
             private int lastPointer = 0;
             private int count = 0;
+            private bool isfull = false;
+
+            public BoundedBuffer()
+            {
+                nonempty = CreateSignal();
+                nonfull = CreateSignal();
+            }
 
             internal void AddItem(int x)
             {
                 enterMonitorSection();
                 try
                 {
-                    while (count == N)
+                    if (count == N)
                     {
+                        isfull |= true;
                         nonfull.Wait();
                     }
 
@@ -133,7 +141,7 @@ namespace MonitorTest
                 enterMonitorSection();
                 try
                 {
-                    while (count == 0)
+                    if (count == 0)
                     {
                         nonempty.Wait();
                     }

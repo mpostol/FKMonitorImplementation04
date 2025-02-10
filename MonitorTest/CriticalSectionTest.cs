@@ -33,6 +33,7 @@ namespace MonitorTest
             CriticalSectionTestClass criticalSectionTestClass = new CriticalSectionTestClass();
 
             // Act
+            // add threading to not protected method
             criticalSectionTestClass.TestMethod();
 
             // Test
