@@ -17,7 +17,13 @@ namespace MonitorTest
             CriticalSectionTestClass criticalSectionTestClass = new CriticalSectionTestClass();
 
             // Act
-            criticalSectionTestClass.HoareMonitorMethod();
+            Thread threadProtected = new Thread(() =>
+            {
+                criticalSectionTestClass.HoareMonitorMethod();
+            });
+            
+            threadProtected.Start();
+            threadProtected.Join();
 
             // Test
             Assert.IsTrue(criticalSectionTestClass.checkValidity);
@@ -33,8 +39,13 @@ namespace MonitorTest
             CriticalSectionTestClass criticalSectionTestClass = new CriticalSectionTestClass();
 
             // Act
-            // add threading to not protected method
-            criticalSectionTestClass.TestMethod();
+            Thread threadProtected = new Thread(() =>
+            {
+                criticalSectionTestClass.TestMethod();
+            });
+
+            threadProtected.Start();
+            threadProtected.Join();
 
             // Test
             Assert.IsTrue(criticalSectionTestClass.checkValidity);
