@@ -1,9 +1,4 @@
 ﻿using MonitorImplementation.HoareMonitor;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MonitorTest
 {
@@ -19,9 +14,9 @@ namespace MonitorTest
             // Act
             Thread threadProtected = new Thread(() =>
             {
-                criticalSectionTestClass.HoareMonitorMethod();
+                criticalSectionTestClass.ThreadsMethod(criticalSectionTestClass.HoareMonitorMethod);
             });
-            
+
             threadProtected.Start();
             threadProtected.Join();
 
@@ -41,14 +36,14 @@ namespace MonitorTest
             // Act
             Thread threadProtected = new Thread(() =>
             {
-                criticalSectionTestClass.TestMethod();
+                criticalSectionTestClass.ThreadsMethod(criticalSectionTestClass.NonMonitorMethod);
             });
 
             threadProtected.Start();
             threadProtected.Join();
 
             // Test
-            Assert.IsTrue(criticalSectionTestClass.checkValidity);
+            Assert.IsFalse(criticalSectionTestClass.checkValidity);
 
             // Dispose
             criticalSectionTestClass.Dispose();
@@ -67,6 +62,24 @@ namespace MonitorTest
                 {
                     exitHoareMonitorSection();
                 }
+            }
+
+            internal void NonMonitorMethod()
+            {
+                TestMethod();
+            }
+
+            public void ThreadsMethod(ThreadStart start)
+            {
+                if (start == null)
+                    throw new ArgumentNullException(nameof(start));
+                Thread[] threadsArray = new Thread[2];
+                for (int i = 0; i < threadsArray.Length; i++)
+                    threadsArray[i] = new Thread(start);
+                foreach (Thread _thread in threadsArray)
+                    _thread.Start();
+                foreach (Thread _thread in threadsArray)
+                    _thread.Join();
             }
 
             private int intA = 0;

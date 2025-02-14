@@ -11,18 +11,15 @@ public class HoareMonitorFody : Attribute, IMethodDecorator
     public void OnEntry()
     {
         Monitor.Enter(this);
-        Console.WriteLine($"[Intercepted] Entering Method");
     }
 
     public void OnExit()
     {
         Monitor.Exit(this);
-        Console.WriteLine($"[Intercepted] Exiting Method");
     }
 
     public void OnException(Exception exception)
     {
         Monitor.Exit(this);
-        Console.WriteLine($"[Intercepted] Exception: {exception.Message}");
     }
 }

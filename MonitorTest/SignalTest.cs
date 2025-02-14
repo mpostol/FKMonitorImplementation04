@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using MonitorImplementation.HoareMonitor;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using MonitorImplementation.HoareMonitor;
 
 namespace MonitorTest
 {
@@ -28,7 +21,6 @@ namespace MonitorTest
 
             // Act
             thread.Start();
-            Thread.Sleep(100);
             thread.Join();
 
             // Test
@@ -54,7 +46,6 @@ namespace MonitorTest
 
             // Act
             thread.Start();
-            Thread.Sleep(100);
             signalTestClass2.SendTheSignal();
             thread.Join();
 

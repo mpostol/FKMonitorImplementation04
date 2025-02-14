@@ -81,57 +81,6 @@ namespace MonitorImplementation.HoareMonitor
             }
         }
 
-        protected class Condition : ICondition
-        {
-            private HoareMonitorImplementation hoareMonitorImp;
-            private Queue<Thread> conditionQueue = new();
-
-            public Condition(HoareMonitorImplementation monitor)
-            {
-                hoareMonitorImp = monitor;
-            }
-
-            public void Send()
-            {
-                lock (this)
-                {
-                    if (conditionQueue.Count > 0)
-                    {
-                        Thread signaledThread = conditionQueue.Dequeue();
-                        hoareMonitorImp.addToQueue(signaledThread);
-                        Monitor.Pulse(this);
-                    }
-                }
-            }
-
-            public void Wait()
-            {
-                lock (this)
-                {
-                    conditionQueue.Enqueue(Thread.CurrentThread);
-                    hoareMonitorImp.exitHoareMonitorSection();
-                    Monitor.Wait(this);
-                    hoareMonitorImp.enterMonitorSection();
-                }
-            }
-
-            public bool Await()
-            {
-                lock (this)
-                {
-                    return conditionQueue.Count > 0;
-                }
-            }
-
-            public void Dispose()
-            {
-                lock (this)
-                {
-                    conditionQueue.Clear();
-                }
-            }
-        }
-
         protected internal void enterMonitorSection()
         {
             Monitor.Enter(this);
@@ -155,17 +104,6 @@ namespace MonitorImplementation.HoareMonitor
         protected override ISignal CreateSignal()
         {
             return new Signal(this);
-        }
-
-        protected override ICondition CreateCondition()
-        {
-            return new Condition(this);
-        }
-
-        public void ExecutMethod()
-        {
-            Console.WriteLine("Executing a method in Critical Section.");
-            //TO DO: implement AOP
         }
 
         protected virtual void Dispose(bool disposing)

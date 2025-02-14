@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using MonitorImplementation.HoareMonitor;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using MonitorImplementation.HoareMonitor;
 
 namespace MonitorTest
 {
@@ -56,6 +49,8 @@ namespace MonitorTest
             // Act
             threadRemove.Start();
             threadAdd.Start();
+            threadRemove.Join(); // Ensure remove finishes before testing
+            threadAdd.Join();
 
             // Test
             Assert.AreEqual(2, item);
@@ -65,33 +60,41 @@ namespace MonitorTest
         }
 
         [TestMethod]
-        public void TestBufferIsFull()
+        public void TestBufferIsEmpty()
         {
             // Prepare
             BoundedBuffer buffer = new BoundedBuffer();
-            const int count = 10;
-            const int sleepTime = 100;
+            const int count = 50;
+            const int sleepTime = 10;
             bool isTrue = true;
 
             // Act
             Thread threadAdd = new Thread(() =>
             {
-                for (int i = 0; i < count + 1; i++)
+                for (int i = 0; i < count; i++)
                 {
+                    buffer.AddItem(i);
                     Thread.Sleep(sleepTime);
-                    buffer.AddItem(count);
                 }
             });
 
             threadAdd.Start();
-            threadAdd.Join();
-            if (buffer.RemoveItem() != 9)
+            Thread.Sleep(200);
+
+            Thread threadRemove = new Thread(() =>
             {
-                isTrue = false;
-            }
+                while (!buffer.isEmpty)
+                {
+                    buffer.RemoveItem();
+                }
+            });
+
+            threadRemove.Start();
+            threadAdd.Join();
+            threadRemove.Join();
 
             // Test
-            Assert.IsTrue(isTrue);
+            Assert.IsTrue(buffer.isEmpty);
 
             // Dispose
             buffer.Dispose();
@@ -105,7 +108,8 @@ namespace MonitorTest
             private readonly int[] buffer = new int[N];
             private int lastPointer = 0;
             private int count = 0;
-            private bool isfull = false;
+            internal bool isfull = false;
+            internal bool isEmpty = false;
 
             public BoundedBuffer()
             {
@@ -120,7 +124,7 @@ namespace MonitorTest
                 {
                     if (count == N)
                     {
-                        isfull |= true;
+                        isfull = true;
                         nonfull.Wait();
                     }
 
@@ -143,6 +147,7 @@ namespace MonitorTest
                 {
                     if (count == 0)
                     {
+                        isEmpty = true;
                         nonempty.Wait();
                     }
 
