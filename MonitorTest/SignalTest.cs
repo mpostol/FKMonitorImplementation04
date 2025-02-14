@@ -6,17 +6,17 @@ namespace MonitorTest
     public class SignalTest
     {
         [TestMethod]
-        public void TestWait()
+        public void TestSignal()
         {
             SignalTestClass signalTestClass = new();
             // Prepare
-            bool isFalse = false;
+            bool signalSent = false;
             signalTestClass.CreateTheSignal();
 
             Thread thread = new Thread(() =>
             {
-                signalTestClass.WaitSignal();
-                isFalse = true;
+                signalTestClass.SendTheSignal();
+                signalSent = true;
             });
 
             // Act
@@ -24,24 +24,24 @@ namespace MonitorTest
             thread.Join();
 
             // Test
-            Assert.IsFalse(isFalse);
+            Assert.IsTrue(signalSent);
 
             // Dispose
             signalTestClass.Dispose();
         }
 
         [TestMethod]
-        public void TestSignal()
+        public void TestWait()
         {
             // Prepare
             SignalTestClass signalTestClass2 = new();
-            bool isTrue = false;
+            bool ThreadWaited = false;
             signalTestClass2.CreateTheSignal();
 
             Thread thread = new Thread(() =>
             {
                 signalTestClass2.WaitSignal();
-                isTrue = true;
+                ThreadWaited = true;
             });
 
             // Act
@@ -50,7 +50,7 @@ namespace MonitorTest
             thread.Join();
 
             // Test
-            Assert.IsTrue(isTrue);
+            Assert.IsTrue(ThreadWaited);
 
             // Dispose
             signalTestClass2.Dispose();

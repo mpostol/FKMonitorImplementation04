@@ -26,20 +26,14 @@ namespace MonitorImplementation.HoareMonitor
 
             public void Send()
             {
-                lock (this)
-                {
-                    autoResetEvent.Set();
-                }
+                autoResetEvent.Set();
             }
 
             public void Wait()
             {
-                lock (this)
-                {
-                    hoareMonitorImp.exitHoareMonitorSection();
-                    autoResetEvent.WaitOne();
-                    hoareMonitorImp.enterMonitorSection();
-                }
+                hoareMonitorImp.exitHoareMonitorSection();
+                autoResetEvent.WaitOne();
+                hoareMonitorImp.enterMonitorSection();
             }
 
 
@@ -81,17 +75,17 @@ namespace MonitorImplementation.HoareMonitor
             }
         }
 
+        private readonly Semaphore enterexitSemaphore = new Semaphore(1, 1);
         protected internal void enterMonitorSection()
         {
-            Monitor.Enter(this);
+            enterexitSemaphore.WaitOne();
         }
 
         protected internal void exitHoareMonitorSection()
         {
             lock (this)
             {
-                Monitor.Pulse(this);
-                Monitor.Exit(this);
+                enterexitSemaphore.Release();
             }
         }
 
