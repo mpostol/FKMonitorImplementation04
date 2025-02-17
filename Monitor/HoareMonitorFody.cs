@@ -1,7 +1,5 @@
 ﻿using MethodDecorator.Fody.Interfaces;
-using System;
 using System.Reflection;
-using System.Threading;
 
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
 public class HoareMonitorFody : Attribute, IMethodDecorator

@@ -1,19 +1,13 @@
-﻿using MonitorImplementation.HoareMonitor;
-using System.Collections;
-using System.Runtime.CompilerServices;
-using System.Threading;
-
-namespace MonitorImplementation.HoareMonitor
+﻿namespace MonitorImplementation.HoareMonitor
 {
     public abstract class HoareMonitorImplementation : HoareMonitor, IDisposable
     {
-        private Queue<Thread> monitorQueue = new();
         private bool disposedValue;
 
         protected class Signal : ISignal, IDisposable
         {
             private bool _disposed = false;
-            private Queue<Thread> signalQueue = new();
+            private int semaphoreCount = 0;
 
             private HoareMonitorImplementation hoareMonitorImp;
 
@@ -32,23 +26,22 @@ namespace MonitorImplementation.HoareMonitor
             public void Wait()
             {
                 hoareMonitorImp.exitHoareMonitorSection();
+                semaphoreCount++;
                 autoResetEvent.WaitOne();
+                semaphoreCount--;
                 hoareMonitorImp.enterMonitorSection();
             }
 
 
             public bool Await()
             {
-                lock (this)
+                if (semaphoreCount > 0)
                 {
-                    if (signalQueue.Count > 0)
-                    {
-                        return true;
-                    }
-                    else
-                    {
-                        return false;
-                    }
+                    return true;
+                }
+                else
+                {
+                    return false;
                 }
             }
 
@@ -68,7 +61,6 @@ namespace MonitorImplementation.HoareMonitor
                 if (disposing)
                 {
                     autoResetEvent.Dispose();
-                    signalQueue.Clear();
                 }
 
                 _disposed = true;
@@ -83,16 +75,7 @@ namespace MonitorImplementation.HoareMonitor
 
         protected internal void exitHoareMonitorSection()
         {
-            lock (this)
-            {
-                enterexitSemaphore.Release();
-            }
-        }
-
-
-        protected internal void addToQueue(Thread thread)
-        {
-            monitorQueue.Enqueue(thread);
+            enterexitSemaphore.Release();
         }
 
         protected override ISignal CreateSignal()
@@ -106,7 +89,7 @@ namespace MonitorImplementation.HoareMonitor
             {
                 if (disposing)
                 {
-                    monitorQueue.Clear();
+                    enterexitSemaphore.Dispose();
                 }
                 disposedValue = true;
             }
