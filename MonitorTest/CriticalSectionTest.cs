@@ -9,44 +9,40 @@ namespace MonitorTest
         public void TestProtectedMethod()
         {
             // Prepare
-            CriticalSectionTestClass criticalSectionTestClass = new CriticalSectionTestClass();
+            using (CriticalSectionTestClass criticalSectionTestClass = new CriticalSectionTestClass()) {
 
-            // Act
-            Thread threadProtected = new Thread(() =>
-            {
-                criticalSectionTestClass.ThreadsMethod(criticalSectionTestClass.HoareMonitorMethod);
-            });
+                // Act
+                Thread threadProtected = new Thread(() =>
+                {
+                    criticalSectionTestClass.ThreadsMethod(criticalSectionTestClass.HoareMonitorMethod);
+                });
 
-            threadProtected.Start();
-            threadProtected.Join();
+                threadProtected.Start();
+                threadProtected.Join();
 
-            // Test
-            Assert.IsTrue(criticalSectionTestClass.checkValidity);
-
-            // Dispose
-            criticalSectionTestClass.Dispose();
+                // Test
+                Assert.IsTrue(criticalSectionTestClass.checkValidity);
+            }
         }
 
         [TestMethod]
         public void TestNotProtectedMethod()
         {
             // Prepare
-            CriticalSectionTestClass criticalSectionTestClass = new CriticalSectionTestClass();
-
-            // Act
-            Thread threadProtected = new Thread(() =>
+            using (CriticalSectionTestClass criticalSectionTestClass = new CriticalSectionTestClass())
             {
-                criticalSectionTestClass.ThreadsMethod(criticalSectionTestClass.NonMonitorMethod);
-            });
+                // Act
+                Thread threadProtected = new Thread(() =>
+                {
+                    criticalSectionTestClass.ThreadsMethod(criticalSectionTestClass.NonMonitorMethod);
+                });
 
-            threadProtected.Start();
-            threadProtected.Join();
+                threadProtected.Start();
+                threadProtected.Join();
 
-            // Test
-            Assert.IsFalse(criticalSectionTestClass.checkValidity);
-
-            // Dispose
-            criticalSectionTestClass.Dispose();
+                // Test
+                Assert.IsFalse(criticalSectionTestClass.checkValidity);
+            }
         }
 
         private class CriticalSectionTestClass : HoareMonitorImplementation

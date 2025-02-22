@@ -8,53 +8,51 @@ namespace MonitorTest
         [TestMethod]
         public void TestSignal()
         {
-            SignalTestClass signalTestClass = new();
             // Prepare
             bool signalSent = false;
-            signalTestClass.CreateTheSignal();
-
-            Thread thread = new Thread(() =>
+            using (SignalTestClass signalTestClass = new())
             {
-                signalTestClass.SendTheSignal();
-                signalSent = true;
-            });
+                //Act
+                signalTestClass.CreateTheSignal();
 
-            // Act
-            thread.Start();
-            thread.Join();
+                Thread thread = new Thread(() =>
+                {
+                    signalTestClass.SendTheSignal();
+                    signalSent = true;
+                });
+
+                thread.Start();
+                thread.Join();
+            }
 
             // Test
             Assert.IsTrue(signalSent);
-
-            // Dispose
-            signalTestClass.Dispose();
         }
 
         [TestMethod]
         public void TestWait()
         {
             // Prepare
-            SignalTestClass signalTestClass2 = new();
             bool ThreadWaited = false;
-            signalTestClass2.CreateTheSignal();
-
-            Thread thread = new Thread(() =>
+            using (SignalTestClass signalTestClass2 = new())
             {
-                signalTestClass2.WaitSignal();
-                ThreadWaited = true;
-            });
+                signalTestClass2.CreateTheSignal();
 
-            // Act
-            thread.Start();
-            Thread.Sleep(100);
-            signalTestClass2.SendTheSignal();
-            thread.Join();
+                // Act
+                Thread thread = new Thread(() =>
+                {
+                    signalTestClass2.WaitSignal();
+                    ThreadWaited = true;
+                });
+
+                thread.Start();
+                Thread.Sleep(100);
+                signalTestClass2.SendTheSignal();
+                thread.Join();
+            }
 
             // Test
             Assert.IsTrue(ThreadWaited);
-
-            // Dispose
-            signalTestClass2.Dispose();
         }
 
         private class SignalTestClass : HoareMonitorImplementation, IDisposable
