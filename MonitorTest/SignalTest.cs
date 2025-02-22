@@ -46,6 +46,7 @@ namespace MonitorTest
 
             // Act
             thread.Start();
+            Thread.Sleep(100);
             signalTestClass2.SendTheSignal();
             thread.Join();
 
@@ -62,46 +63,41 @@ namespace MonitorTest
 
             internal void CreateTheSignal()
             {
-                enterMonitorSection();
+                enterTheMonitor();
                 try
                 {
                     signal = CreateSignal();
                 }
                 finally
                 {
-                    exitHoareMonitorSection();
+                    exitTheMonitor();
                 }
             }
 
             internal void SendTheSignal()
             {
-                enterMonitorSection();
+                enterTheMonitor();
                 try
                 {
                     signal?.Send();
                 }
                 finally
                 {
-                    exitHoareMonitorSection();
+                    exitTheMonitor();
                 }
             }
 
             internal void WaitSignal()
             {
-                enterMonitorSection();
+                enterTheMonitor();
                 try
                 {
                     signal?.Wait();
                 }
                 finally
                 {
-                    exitHoareMonitorSection();
+                    exitTheMonitor();
                 }
-            }
-
-            public new void Dispose()
-            {
-                base.Dispose();
             }
         }
     }

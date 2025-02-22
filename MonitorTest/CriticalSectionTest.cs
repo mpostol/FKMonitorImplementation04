@@ -49,18 +49,18 @@ namespace MonitorTest
             criticalSectionTestClass.Dispose();
         }
 
-        private class CriticalSectionTestClass : HoareMonitorImplementation, IDisposable
+        private class CriticalSectionTestClass : HoareMonitorImplementation
         {
             internal void HoareMonitorMethod()
             {
-                enterMonitorSection();
+                enterTheMonitor();
                 try
                 {
                     TestMethod();
                 }
                 finally
                 {
-                    exitHoareMonitorSection();
+                    exitTheMonitor();
                 }
             }
 
@@ -100,11 +100,6 @@ namespace MonitorTest
             }
 
             public bool checkValidity = true;
-
-            public new void Dispose()
-            {
-                base.Dispose();
-            }
         }
     }
 }

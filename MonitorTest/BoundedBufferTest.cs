@@ -9,12 +9,13 @@ namespace MonitorTest
         public void TestTransferItem()
         {
             // Prepare
-            using BoundedBuffer<int> buffer = new BoundedBuffer<int>();
             int item = 0;
-
-            // Act
-            buffer.AddItem(2);
-            item = buffer.RemoveItem();
+            using (BoundedBuffer<int> buffer = new BoundedBuffer<int>())
+            {
+                // Act
+                buffer.AddItem(2);
+                item = buffer.RemoveItem();
+            }
 
             // Test
             Assert.AreEqual(2, item);
@@ -24,24 +25,25 @@ namespace MonitorTest
         public void TestRemoveItem()
         {
             // Prepare
-            using BoundedBuffer<int> buffer = new BoundedBuffer<int>();
             int item = 0;
-
-            // Act
-            Thread threadRemove = new Thread(() =>
+            using (BoundedBuffer<int> buffer = new BoundedBuffer<int>())
             {
-                item = buffer.RemoveItem();
-            });
+                // Act
+                Thread threadRemove = new Thread(() =>
+                {
+                    item = buffer.RemoveItem();
+                });
 
-            Thread threadAdd = new Thread(() =>
-            {
-                buffer.AddItem(2);
-            });
+                Thread threadAdd = new Thread(() =>
+                {
+                    buffer.AddItem(2);
+                });
 
-            threadRemove.Start();
-            threadAdd.Start();
-            threadRemove.Join();
-            threadAdd.Join();
+                threadRemove.Start();
+                threadAdd.Start();
+                threadRemove.Join();
+                threadAdd.Join();
+            }
 
             // Test
             Assert.AreEqual(2, item);
@@ -51,76 +53,80 @@ namespace MonitorTest
         public void TestBufferIsEmpty()
         {
             // Prepare
-            using BoundedBuffer<int> buffer = new BoundedBuffer<int>();
             const int count = 50;
             const int sleepTime = 10;
-
-            // Act
-            Thread threadAdd = new Thread(() =>
+            bool isEmpty = false;
+            using (BoundedBuffer<int> buffer = new BoundedBuffer<int>())
             {
-                for (int i = 0; i < count; i++)
+                // Act
+                Thread threadAdd = new Thread(() =>
                 {
-                    buffer.AddItem(i);
-                    Thread.Sleep(sleepTime);
-                }
-            });
+                    for (int i = 0; i < count; i++)
+                    {
+                        buffer.AddItem(i);
+                        Thread.Sleep(sleepTime);
+                    }
+                });
 
-            Thread threadRemove = new Thread(() =>
-            {
-                for (int i = 0; i < count; i++)
+                Thread threadRemove = new Thread(() =>
                 {
-                    buffer.RemoveItem();
-                }
-            });
+                    for (int i = 0; i < count; i++)
+                    {
+                        buffer.RemoveItem();
+                    }
+                });
 
-            threadAdd.Start();
-            threadRemove.Start();
-            threadAdd.Join();
-            threadRemove.Join();
+                threadAdd.Start();
+                threadRemove.Start();
+                threadAdd.Join();
+                threadRemove.Join();
+
+                isEmpty = buffer.isEmpty;
+            }
 
             // Test
-            Assert.IsTrue(buffer.isEmpty);
-
-            // Dispose
-            buffer.Dispose();
+            Assert.IsTrue(isEmpty);
         }
 
         [TestMethod]
         public void TestBufferIsFull()
         {
             // Prepare
-            using BoundedBuffer<int> buffer = new BoundedBuffer<int>();
-            const int count = 11;
+            const int count = 50;
+            const int removeSleepTime = 10;
             bool isFull = false;
-
-            // Act
-            Thread threadAdd = new Thread(() =>
+            using (BoundedBuffer<int> buffer = new BoundedBuffer<int>())
             {
-                for (int i = 0; i < count; i++)
+                // Act
+                Thread threadAdd = new Thread(() =>
                 {
-                    buffer.AddItem(i);
-                }
-            });
+                    for (int i = 0; i < count; i++)
+                    {
+                        buffer.AddItem(i);
+                        if (buffer.isFull)
+                        {
+                            isFull = true;
+                        }
+                    }
+                });
 
-            Thread threadRemove = new Thread(() =>
-            {
-                for (int i = 0; i < count; i++)
+                Thread threadRemove = new Thread(() =>
                 {
-                    buffer.RemoveItem();
-                }
-            });
+                    for (int i = 0; i < count; i++)
+                    {
+                        buffer.RemoveItem();
+                        Thread.Sleep(removeSleepTime);
+                    }
+                });
 
-            threadAdd.Start();
-            isFull = buffer.isFull;
-            threadRemove.Start();
-            threadAdd.Join();
-            threadRemove.Join();
+                threadAdd.Start();
+                threadRemove.Start();
+                threadAdd.Join();
+                threadRemove.Join();
+            }
 
             // Test
             Assert.IsTrue(isFull);
-
-            // Dispose
-            buffer.Dispose();
         }
 
         private class BoundedBuffer<T> : HoareMonitorImplementation
@@ -142,10 +148,10 @@ namespace MonitorTest
 
             internal void AddItem(T x)
             {
-                enterMonitorSection();
+                enterTheMonitor();
                 try
                 {
-                    if (count == N)
+                    while (count == N)
                     {
                         isFull = true;
                         nonfull.Wait();
@@ -159,16 +165,16 @@ namespace MonitorTest
                 }
                 finally
                 {
-                    exitHoareMonitorSection();
+                    exitTheMonitor();
                 }
             }
 
             internal T RemoveItem()
             {
-                enterMonitorSection();
+                enterTheMonitor();
                 try
                 {
-                    if (count == 0)
+                    while (count == 0)
                     {
                         isEmpty = true;
                         nonempty.Wait();
@@ -183,13 +189,8 @@ namespace MonitorTest
                 }
                 finally
                 {
-                    exitHoareMonitorSection();
+                    exitTheMonitor();
                 }
-            }
-
-            public new void Dispose()
-            {
-                base.Dispose();
             }
         }
     }

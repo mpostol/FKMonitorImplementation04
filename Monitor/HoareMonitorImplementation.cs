@@ -2,16 +2,19 @@
 {
     public abstract class HoareMonitorImplementation : HoareMonitor, IDisposable
     {
-        private bool disposedValue;
+        private bool disposedValue = false;
+
+        private int urgentCount = 0;
+        private readonly Semaphore mutex = new Semaphore(1, 1);
+        private readonly Semaphore urgent = new Semaphore(0, int.MaxValue);
 
         protected class Signal : ISignal, IDisposable
         {
             private bool _disposed = false;
-            private int semaphoreCount = 0;
+            private int condCount = 0;
+            private readonly Semaphore condsem = new Semaphore(0, int.MaxValue);
 
-            private HoareMonitorImplementation hoareMonitorImp;
-
-            private AutoResetEvent autoResetEvent = new AutoResetEvent(false);
+            private readonly HoareMonitorImplementation hoareMonitorImp;
 
             public Signal(HoareMonitorImplementation monitor)
             {
@@ -20,62 +23,62 @@
 
             public void Send()
             {
-                autoResetEvent.Set();
+                hoareMonitorImp.urgentCount++;
+                if (condCount > 0)
+                {
+                    condsem.Release();
+                    hoareMonitorImp.urgent.WaitOne();
+                }
+                hoareMonitorImp.urgentCount--;
             }
 
             public void Wait()
             {
-                hoareMonitorImp.exitHoareMonitorSection();
-                semaphoreCount++;
-                autoResetEvent.WaitOne();
-                semaphoreCount--;
-                hoareMonitorImp.enterMonitorSection();
+                condCount++;
+                hoareMonitorImp.exitTheMonitor();
+                condsem.WaitOne();
+                condCount--;
             }
-
 
             public bool Await()
             {
-                if (semaphoreCount > 0)
+                return condCount > 0;
+            }
+
+            protected virtual void Dispose(bool disposing)
+            {
+                if (!_disposed)
                 {
-                    return true;
-                }
-                else
-                {
-                    return false;
+                    if (disposing)
+                    {
+                        condsem?.Dispose();
+                    }
+                    _disposed = true;
                 }
             }
 
             public void Dispose()
             {
-                Dispose(true);
+                Dispose(disposing: true);
                 GC.SuppressFinalize(this);
             }
+        }
 
-            protected virtual void Dispose(bool disposing)
+        protected internal void enterTheMonitor()
+        {
+            mutex.WaitOne();
+        }
+
+        protected internal void exitTheMonitor()
+        {
+            if (urgentCount > 0)
             {
-                if (_disposed)
-                {
-                    return;
-                }
-
-                if (disposing)
-                {
-                    autoResetEvent.Dispose();
-                }
-
-                _disposed = true;
+                urgent.Release();
             }
-        }
-
-        private readonly Semaphore enterexitSemaphore = new Semaphore(1, 1);
-        protected internal void enterMonitorSection()
-        {
-            enterexitSemaphore.WaitOne();
-        }
-
-        protected internal void exitHoareMonitorSection()
-        {
-            enterexitSemaphore.Release();
+            else
+            {
+                mutex.Release();
+            }
         }
 
         protected override ISignal CreateSignal()
@@ -89,7 +92,8 @@
             {
                 if (disposing)
                 {
-                    enterexitSemaphore.Dispose();
+                    mutex?.Dispose();
+                    urgent?.Dispose();
                 }
                 disposedValue = true;
             }

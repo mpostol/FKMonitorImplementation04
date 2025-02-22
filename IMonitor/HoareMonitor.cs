@@ -9,6 +9,7 @@
             void Wait();
 
             bool Await();
+            void Dispose();
         }
 
         /// <summary>
