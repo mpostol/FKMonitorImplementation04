@@ -36,7 +36,7 @@
             {
                 condCount++;
                 hoareMonitorImp.exitTheMonitor();
-                condsem.WaitOne();
+                condsem.WaitOne();  //HACK Possible Check-Than-Act Race condition
                 condCount--;
             }
 

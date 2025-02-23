@@ -81,11 +81,11 @@ namespace MonitorTest
                 threadAdd.Join();
                 threadRemove.Join();
 
-                isEmpty = buffer.isEmpty;
+                isEmpty = buffer.isEmpty; //HACK Why indirect test
             }
 
             // Test
-            Assert.IsTrue(isEmpty);
+            Assert.IsTrue(isEmpty); //HACK Why indirect test
         }
 
         [TestMethod]
@@ -151,7 +151,8 @@ namespace MonitorTest
                 enterTheMonitor();
                 try
                 {
-                    while (count == N)
+                    while (count == N)  //HACK CTA race condition possible. 
+                                        //HACK `if` expected instead of `while` - see HoareMonitorImplementation.cs for details
                     {
                         isFull = true;
                         nonfull.Wait();

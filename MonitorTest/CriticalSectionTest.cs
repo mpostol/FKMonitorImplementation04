@@ -6,11 +6,11 @@ namespace MonitorTest
     public class CriticalSectionTest
     {
         [TestMethod]
-        public void TestProtectedMethod()
+        public void TestProtectedMethod() //UNDONE exception test is expected
         {
             // Prepare
-            using (CriticalSectionTestClass criticalSectionTestClass = new CriticalSectionTestClass()) {
-
+            using (CriticalSectionTestClass criticalSectionTestClass = new CriticalSectionTestClass())
+            {
                 // Act
                 Thread threadProtected = new Thread(() =>
                 {
@@ -65,7 +65,7 @@ namespace MonitorTest
                 TestMethod();
             }
 
-            public void ThreadsMethod(ThreadStart start)
+            public void ThreadsMethod(ThreadStart start) //HACK Why public (internal declaration) - monitor should be used in the multithread environment.
             {
                 if (start == null)
                     throw new ArgumentNullException(nameof(start));
@@ -80,15 +80,16 @@ namespace MonitorTest
 
             private int intA = 0;
             private int intB = 0;
-            private int counter = 0;
-            internal void TestMethod()
+            private int counter = 0; //HACK Why not random?
+
+            internal void TestMethod()  //HACK Why not private
             {
                 for (int i = 0; i < 100000; i++)
                 {
                     counter++;
                     intA = counter;
                     intB = counter;
-                    if (intA -  intB != 0)
+                    if (intA - intB != 0)
                     {
                         checkValidity = false;
                     }
